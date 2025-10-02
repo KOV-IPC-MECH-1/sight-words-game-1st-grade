@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sight Words">
+    <title>Sight Words Strands Game</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Sparkles = () => (
+            <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+        );
+
+        const RotateCcw = () => (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        );
+
+        const Lightbulb = () => (
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+        );
+
+        const StrandsSightWords = () => {
+            const THEMES = [
+                {
+                    theme: "Action Words",
+                    words: ['GIVE', 'COME', 'WORK', 'PUT'],
+                    spangram: 'WRITE'
+                },
+                {
+                    theme: "Question Words",
+                    words: ['WHAT', 'WHO', 'WHERE'],
+                    spangram: 'WHOSE'
+                },
+                {
+                    theme: "Time Words",
+                    words: ['WAS', 'WERE', 'BEEN', 'ONCE'],
+                    spangram: 'AGAIN'
+                },
+                {
+                    theme: "Helper Words",
+                    words: ['COULD', 'WOULD'],
+                    spangram: 'SHOULD'
+                },
+                {
+                    theme: "Amount Words",
+                    words: ['MANY', 'SOME', 'ANY', 'ONE'],
+                    spangram: 'FULL'
+                }
+            ];
+
+            const [currentTheme, setCurrentTheme] = useState(0);
+            const [grid, setGrid] = useState([]);
+            const [selectedCells, setSelectedCells] = useState([]);
+            const [currentWord, setCurrentWord] = useState('');
+            const [foundWords, setFoundWords] = useState([]);
+            const [hintsUsed, setHintsUsed] = useState(0);
+            const [showHint, setShowHint] = useState(false);
+            const [gameWon, setGameWon] = useState(false);
+
+            const theme = THEMES[currentTheme];
+            const targetWords = [...theme.words, theme.spangram];
+
+            useEffect(() => {
+                generateGrid();
+            }, [currentTheme]);
+
+            useEffect(() => {
+                if (foundWords.length === targetWords.length && foundWords.length > 0 && !gameWon) {
+                    setGameWon(true);
+                }
+            }, [foundWords, targetWords.length, gameWon]);
+
+            const generateGrid = () => {
+                const allWords = [...theme.words, theme.spangram];
+                const totalLetters = allWords.join('').length;
+                const gridSize = Math.max(6, Math.ceil(Math.sqrt(totalLetters)) + 1);
+                
+                let attempts = 0;
+                let success = false;
+                let newGrid, placedWords;
+
+                while (!success && attempts < 200) {
+                    newGrid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
+                    placedWords = [];
+                    const usedCells = new Set();
+
+                    const tryPlaceWord = (word) => {
+                        const directions = [
+                            { dr: 0, dc: 1 },
+                            { dr: 1, dc: 0 },
+                            { dr: 1, dc: 1 },
+                            { dr: -1, dc: 1 },
+                            { dr: 0, dc: -1 },
+                            { dr: -1, dc: 0 },
+                            { dr: -1, dc: -1 },
+                            { dr: 1, dc: -1 }
+                        ];
+
+                        const shuffledDirections = [...directions].sort(() => Math.random() - 0.5);
+
+                        for (let placeAttempt = 0; placeAttempt < 100; placeAttempt++) {
+                            const startRow = Math.floor(Math.random() * gridSize);
+                            const startCol = Math.floor(Math.random() * gridSize);
+
+                            for (const dir of shuffledDirections) {
+                                const cells = [];
+                                let valid = true;
+
+                                for (let i = 0; i < word.length; i++) {
+                                    const row = startRow + dir.dr * i;
+                                    const col = startCol + dir.dc * i;
+
+                                    if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
+                                        valid = false;
+                                        break;
+                                    }
+
+                                    const cellKey = `${row}-${col}`;
+                                    if (usedCells.has(cellKey)) {
+                                        valid = false;
+                                        break;
+                                    }
+
+                                    cells.push({ row, col, letter: word[i] });
+                                }
+
+                                if (valid) {
+                                    cells.forEach(cell => {
+                                        newGrid[cell.row][cell.col] = cell.letter;
+                                        usedCells.add(`${cell.row}-${cell.col}`);
+                                    });
+                                    return cells;
+                                }
+                            }
+                        }
+                        return null;
+                    };
+
+                    const sortedWords = [...allWords].sort((a, b) => b.length - a.length);
+                    
+                    for (const word of sortedWords) {
+                        const cells = tryPlaceWord(word);
+                        if (cells) {
+                            placedWords.push({ word, cells });
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (placedWords.length === allWords.length) {
+                        success = true;
+                    }
+                    attempts++;
+                }
+
+                if (success) {
+                    const minRow = Math.min(...placedWords.flatMap(pw => pw.cells.map(c => c.row)));
+                    const maxRow = Math.max(...placedWords.flatMap(pw => pw.cells.map(c => c.row)));
+                    const minCol = Math.min(...placedWords.flatMap(pw => pw.cells.map(c => c.col)));
+                    const maxCol = Math.max(...placedWords.flatMap(pw => pw.cells.map(c => c.col)));
+
+                    const compactGrid = [];
+                    for (let r = minRow; r <= maxRow; r++) {
+                        const row = [];
+                        for (let c = minCol; c <= maxCol; c++) {
+                            row.push(newGrid[r][c]);
+                        }
+                        compactGrid.push(row);
+                    }
+
+                    setGrid(compactGrid);
+                } else {
+                    console.error('Failed to generate grid after 200 attempts, retrying...');
+                    setTimeout(() => generateGrid(), 100);
+                    return;
+                }
+
+                setFoundWords([]);
+                setSelectedCells([]);
+                setCurrentWord('');
+                setHintsUsed(0);
+                setShowHint(false);
+                setGameWon(false);
+            };
+
+            const isAdjacent = (cell1, cell2) => {
+                const rowDiff = Math.abs(cell1.row - cell2.row);
+                const colDiff = Math.abs(cell1.col - cell2.col);
+                return (rowDiff <= 1 && colDiff <= 1) && !(rowDiff === 0 && colDiff === 0);
+            };
+
+            const isCellInFoundWord = (row, col) => {
+                return foundWords.some(fw => 
+                    fw.cells.some(cell => cell.row === row && cell.col === col)
+                );
+            };
+
+            const handleCellClick = (row, col) => {
+                if (!grid[row] || !grid[row][col] || isCellInFoundWord(row, col)) return;
+
+                const isSelected = selectedCells.some(cell => cell.row === row && cell.col === col);
+
+                if (isSelected) {
+                    const lastCell = selectedCells[selectedCells.length - 1];
+                    if (lastCell.row === row && lastCell.col === col) {
+                        setSelectedCells(selectedCells.slice(0, -1));
+                        setCurrentWord(currentWord.slice(0, -1));
+                    }
+                    return;
+                }
+
+                if (selectedCells.length === 0 || isAdjacent(selectedCells[selectedCells.length - 1], {row, col})) {
+                    setSelectedCells([...selectedCells, {row, col}]);
+                    setCurrentWord(currentWord + grid[row][col]);
+                }
+            };
+
+            const checkWord = () => {
+                if (targetWords.includes(currentWord) && !foundWords.some(fw => fw.word === currentWord)) {
+                    setFoundWords([...foundWords, { word: currentWord, cells: selectedCells, isSpangram: currentWord === theme.spangram }]);
+                    setSelectedCells([]);
+                    setCurrentWord('');
+                } else {
+                    setSelectedCells([]);
+                    setCurrentWord('');
+                }
+            };
+
+            const useHint = () => {
+                if (hintsUsed < 2) {
+                    setShowHint(true);
+                    setHintsUsed(hintsUsed + 1);
+                    setTimeout(() => setShowHint(false), 5000);
+                }
+            };
+
+            const nextTheme = () => {
+                setCurrentTheme((currentTheme + 1) % THEMES.length);
+            };
+
+            const getCellColor = (row, col) => {
+                if (!grid[row] || !grid[row][col]) return 'invisible';
+                
+                const isSelected = selectedCells.some(cell => cell.row === row && cell.col === col);
+                const foundWord = foundWords.find(fw => 
+                    fw.cells.some(cell => cell.row === row && cell.col === col)
+                );
+                
+                if (foundWord) {
+                    return foundWord.isSpangram 
+                        ? 'bg-yellow-400 text-yellow-900 border-yellow-600' 
+                        : 'bg-blue-400 text-white border-blue-600';
+                }
+                
+                if (isSelected) return 'bg-purple-400 text-white border-purple-600';
+                
+                return 'bg-white hover:bg-gray-100 border-gray-300';
+            };
+
+            const renderStrandLines = () => {
+                const lines = [];
+                const cellSize = 60;
+                const gap = 16;
+
+                foundWords.forEach((fw, wordIdx) => {
+                    const color = fw.isSpangram ? '#facc15' : '#60a5fa';
+                    
+                    for (let i = 0; i < fw.cells.length - 1; i++) {
+                        const from = fw.cells[i];
+                        const to = fw.cells[i + 1];
+                        
+                        const x1 = from.col * (cellSize + gap) + cellSize / 2;
+                        const y1 = from.row * (cellSize + gap) + cellSize / 2;
+                        const x2 = to.col * (cellSize + gap) + cellSize / 2;
+                        const y2 = to.row * (cellSize + gap) + cellSize / 2;
+
+                        lines.push(
+                            <line
+                                key={`${wordIdx}-${i}`}
+                                x1={x1}
+                                y1={y1}
+                                x2={x2}
+                                y2={y2}
+                                stroke={color}
+                                strokeWidth="5"
+                                strokeLinecap="round"
+                                opacity="0.8"
+                            />
+                        );
+                    }
+                });
+
+                return lines;
+            };
+
+            const renderCurrentSelectionLines = () => {
+                if (selectedCells.length < 2) return null;
+
+                const lines = [];
+                const cellSize = 60;
+                const gap = 16;
+                const color = '#c084fc';
+
+                for (let i = 0; i < selectedCells.length - 1; i++) {
+                    const from = selectedCells[i];
+                    const to = selectedCells[i + 1];
+                    
+                    const x1 = from.col * (cellSize + gap) + cellSize / 2;
+                    const y1 = from.row * (cellSize + gap) + cellSize / 2;
+                    const x2 = to.col * (cellSize + gap) + cellSize / 2;
+                    const y2 = to.row * (cellSize + gap) + cellSize / 2;
+
+                    lines.push(
+                        <line
+                            key={`current-${i}`}
+                            x1={x1}
+                            y1={y1}
+                            x2={x2}
+                            y2={y2}
+                            stroke={color}
+                            strokeWidth="5"
+                            strokeLinecap="round"
+                            opacity="0.8"
+                        />
+                    );
+                }
+
+                return lines;
+            };
+
+            const cols = grid[0]?.length || 1;
+            const rows = grid.length;
+            const cellSize = 60;
+            const gap = 16;
+            const gridWidth = cols * cellSize + (cols - 1) * gap;
+            const gridHeight = rows * cellSize + (rows - 1) * gap;
+
+            if (grid.length === 0) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+                        <div className="text-2xl font-bold text-orange-600">Loading...</div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-100 p-2 sm:p-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-lg shadow-lg p-3 sm:p-6 mb-4">
+                            <div className="flex items-center justify-between mb-4">
+                                <h1 className="text-2xl sm:text-3xl font-bold text-orange-600 flex items-center gap-2">
+                                    <Sparkles />
+                                    Sight Words Strands
+                                </h1>
+                                <button
+                                    onClick={generateGrid}
+                                    className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                                >
+                                    <RotateCcw />
+                                </button>
+                            </div>
+
+                            <div className="bg-orange-50 rounded-lg p-3 sm:p-4 mb-4">
+                                <h2 className="text-lg sm:text-xl font-bold text-orange-800 mb-2">
+                                    Theme: {theme.theme}
+                                </h2>
+                                <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                                    Find all {targetWords.length} words! Tap connected letters. The yellow word is the "spangram"!
+                                </p>
+                                <div className="flex gap-2 flex-wrap">
+                                    {targetWords.map((word, idx) => {
+                                        const isFound = foundWords.some(fw => fw.word === word);
+                                        const isSpangram = word === theme.spangram;
+                                        return (
+                                            <span
+                                                key={idx}
+                                                className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
+                                                    isFound
+                                                        ? isSpangram 
+                                                            ? 'bg-yellow-400 text-yellow-900'
+                                                            : 'bg-blue-500 text-white'
+                                                        : 'bg-gray-200 text-gray-600'
+                                                }`}
+                                            >
+                                                {isFound ? word : '???'}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {showHint && (
+                                <div className="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3 mb-4">
+                                    <p className="text-xs sm:text-sm font-semibold text-yellow-800">
+                                        💡 The spangram (yellow word) is: {theme.spangram}
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex justify-center mb-4">
+                                <div className="relative inline-block" style={{ minHeight: `${gridHeight + 40}px` }}>
+                                    <svg
+                                        className="absolute top-0 left-0 pointer-events-none"
+                                        style={{
+                                            width: `${gridWidth}px`,
+                                            height: `${gridHeight}px`
+                                        }}
+                                    >
+                                        {renderStrandLines()}
+                                        {renderCurrentSelectionLines()}
+                                    </svg>
+                                    <div 
+                                        className="inline-grid" 
+                                        style={{ 
+                                            gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
+                                            gap: `${gap}px`,
+                                            position: 'relative',
+                                            zIndex: 10
+                                        }}
+                                    >
+                                        {grid.map((row, rowIdx) =>
+                                            row.map((letter, colIdx) => (
+                                                <button
+                                                    key={`${rowIdx}-${colIdx}`}
+                                                    onClick={() => handleCellClick(rowIdx, colIdx)}
+                                                    disabled={!letter}
+                                                    className={`flex items-center justify-center text-xl sm:text-2xl font-bold rounded-full border-4 transition-all shadow-md ${getCellColor(rowIdx, colIdx)}`}
+                                                    style={{ 
+                                                        width: `${cellSize}px`,
+                                                        height: `${cellSize}px`,
+                                                        position: 'relative',
+                                                        zIndex: 20
+                                                    }}
+                                                >
+                                                    {letter}
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {currentWord && (
+                                <div className="bg-purple-50 rounded-lg p-3 mb-4 text-center">
+                                    <p className="text-xl sm:text-2xl font-bold text-purple-800 mb-2">{currentWord}</p>
+                                    <button
+                                        onClick={checkWord}
+                                        className="px-4 sm:px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-semibold text-sm sm:text-base"
+                                    >
+                                        Submit Word
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={useHint}
+                                    disabled={hintsUsed >= 2}
+                                    className={`flex-1 py-2 sm:py-3 rounded-lg font-semibold flex items-center justify-center gap-2 text-sm sm:text-base ${
+                                        hintsUsed >= 2
+                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            : 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500'
+                                    }`}
+                                >
+                                    <Lightbulb />
+                                    Hint ({2 - hintsUsed})
+                                </button>
+                                <button
+                                    onClick={nextTheme}
+                                    className="flex-1 py-2 sm:py-3 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 text-sm sm:text-base"
+                                >
+                                    Next Theme
+                                </button>
+                            </div>
+                        </div>
+
+                        {gameWon && (
+                            <div className="bg-green-500 text-white rounded-lg shadow-lg p-4 sm:p-6 text-center animate-bounce">
+                                <h2 className="text-2xl sm:text-3xl font-bold mb-2">🎉 Perfect! 🎉</h2>
+                                <p className="text-base sm:text-lg mb-4">You found all {targetWords.length} words!</p>
+                                <button
+                                    onClick={nextTheme}
+                                    className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-green-600 rounded-lg font-bold hover:bg-gray-100"
+                                >
+                                    Play Next Theme
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<StrandsSightWords />, document.getElementById('root'));
+    </script>
+</body>
+</html>
