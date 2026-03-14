@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="shortcut icon" type="image/png" href="game_icon_180x180.png">
-    <link rel="shortcut icon" sizes="192x192" href="game_icon_180x180.png">
-    <link rel="apple-touch-icon" href="game_icon_180x180.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -56,18 +53,23 @@
             const THEMES = [
                 {
                     theme: "Action Words",
-                    words: ['GIVE', 'COME', 'WORK', 'PUT'],
-                    spangram: 'WRITE'
+                    words: ['WALK', 'TALK', 'PLAY', 'LOOK'],
+                    spangram: 'START'
                 },
                 {
                     theme: "Question Words",
-                    words: ['WHAT', 'WHO', 'WHERE'],
+                    words: ['WHAT', 'WHERE', 'WHY', 'WHO'],
                     spangram: 'WHOSE'
                 },
                 {
+                    theme: "Feeling Words",
+                    words: ['LIKE', 'WANT', 'GOOD'],
+                    spangram: 'PRETTY'
+                },
+                {
                     theme: "Time Words",
-                    words: ['WAS', 'WERE', 'BEEN', 'ONCE'],
-                    spangram: 'AGAIN'
+                    words: ['WAS', 'WERE', 'BEEN', 'NEW'],
+                    spangram: 'ALWAYS'
                 },
                 {
                     theme: "Helper Words",
@@ -75,9 +77,79 @@
                     spangram: 'SHOULD'
                 },
                 {
+                    theme: "People Words",
+                    words: ['HE', 'SHE', 'WE', 'ME', 'HIS'],
+                    spangram: 'THEY'
+                },
+                {
+                    theme: "Number Words",
+                    words: ['ONE', 'TWO', 'MANY'],
+                    spangram: 'THREE'
+                },
+                {
+                    theme: "Position Words",
+                    words: ['OVER', 'UNDER', 'OFF'],
+                    spangram: 'AFTER'
+                },
+                {
+                    theme: "Temperature",
+                    words: ['HOT', 'COLD', 'OLD', 'NEW'],
+                    spangram: 'LITTLE'
+                },
+                {
+                    theme: "Yes & No",
+                    words: ['YES', 'NO', 'OR', 'SO'],
+                    spangram: 'PLEASE'
+                },
+                {
+                    theme: "Movement",
+                    words: ['GO', 'COME', 'PULL', 'PUT'],
+                    spangram: 'GIVE'
+                },
+                {
+                    theme: "Being Words",
+                    words: ['IS', 'ARE', 'BE', 'HAS'],
+                    spangram: 'HAVE'
+                },
+                {
+                    theme: "Negatives",
+                    words: ['NOT', 'NO'],
+                    spangram: 'DONT'
+                },
+                {
                     theme: "Amount Words",
-                    words: ['MANY', 'SOME', 'ANY', 'ONE'],
-                    spangram: 'FULL'
+                    words: ['SOME', 'ANY', 'FULL'],
+                    spangram: 'EVERY'
+                },
+                {
+                    theme: "Connecting Words",
+                    words: ['AND', 'BUT', 'FOR', 'OR'],
+                    spangram: 'BECAUSE'
+                },
+                {
+                    theme: "Past Actions",
+                    words: ['DID', 'SAID', 'DONE'],
+                    spangram: 'KNEW'
+                },
+                {
+                    theme: "Place Words",
+                    words: ['HERE', 'THERE', 'FAR'],
+                    spangram: 'WHERE'
+                },
+                {
+                    theme: "Describing",
+                    words: ['VERY', 'ONLY', 'SOON'],
+                    spangram: 'FIRST'
+                },
+                {
+                    theme: "Thinking",
+                    words: ['KNOW', 'THINK', 'SEE'],
+                    spangram: 'THANK'
+                },
+                {
+                    theme: "Living",
+                    words: ['LIVE', 'WAY', 'WORK'],
+                    spangram: 'LAUGH'
                 }
             ];
 
@@ -395,7 +467,7 @@
 
                             <div className="bg-orange-50 rounded-lg p-3 sm:p-4 mb-4">
                                 <h2 className="text-lg sm:text-xl font-bold text-orange-800 mb-2">
-                                    Theme: {theme.theme}
+                                    Theme {currentTheme + 1} of {THEMES.length}: {theme.theme}
                                 </h2>
                                 <p className="text-xs sm:text-sm text-gray-600 mb-2">
                                     Find all {targetWords.length} words! Tap connected letters. The yellow word is the "spangram"!
@@ -515,7 +587,7 @@
                                     onClick={nextTheme}
                                     className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-green-600 rounded-lg font-bold hover:bg-gray-100"
                                 >
-                                    Play Next Theme
+                                    Next Theme
                                 </button>
                             </div>
                         )}
